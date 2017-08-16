@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<!--
+		Author: Adam Snyder
+		Company: Keepers
+		Description:
+			This program was made to act as a decision tree, which will work across iOS, Android, and Web.  It will (when completed) read information from a specified google sheet, and create an click through interactive decision tree for a user to experience without need for any coding on their part.
+		Before Running:
+			This uses Framework7, and is hosted by PhoneGap Desktop Application.  I have not run this program without first having both installed.  I would recommend using them, but cannot speak to whether or not they are necessary for this to run.  
+		Current Bugs:
+			This program currently works because it is hard coded.  The things that need to be fixed include having the app read correctly from google sheets.  Please see my other page, Sheets.html to see my updated work on fixing this issue.  
+	-->
+    <!--
+        Customize this policy to fit your own app's needs. For more guidance, see:
+            https://github.com/apache/cordova-plugin-whitelist/blob/master/README.md#content-security-policy
+        Some notes:
+            * gap: is required only on iOS (when using UIWebView) and is needed for JS->native communication
+            * https://ssl.gstatic.com is required only on Android and is needed for TalkBack to function properly
+            * Disables use of inline scripts in order to mitigate risk of XSS vulnerabilities. To change this:
+                * Enable inline JS: add 'unsafe-inline' to default-src
+        -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: https://ssl.gstatic.com 'unsafe-eval'; style-src 'self' 'unsafe-inline'; media-src *">
+
+    <!-- Required meta tags-->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="msapplication-tap-highlight" content="no">
+
+    <!-- Your app title -->
+    <title>My App</title>
+
+    <!-- This template defaults to the iOS CSS theme. To support both iOS and material design themes, see the Framework7 Tutorial at the link below:
+        http://www.idangero.us/framework7/tutorials/maintain-both-ios-and-material-themes-in-single-app.html
+     -->
+
+    <link rel="stylesheet" href="lib/framework7/css/framework7.ios.min.css">
+    <link rel="stylesheet" href="lib/framework7/css/framework7.ios.colors.min.css">
+
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <!-- Status bar overlay for full screen mode (PhoneGap) -->
+    <div class="statusbar-overlay"></div>
+
+    <!-- Panels overlay-->
+    <div class="panel-overlay"></div>
+    <!-- Left panel with reveal effect-->
+    <div class="panel panel-left panel-reveal">
+        <div class="content-block">
+            <p>Left panel content goes here</p>
+        </div>
+    </div>
+
+    <!-- Views -->
+    <div class="views">
+        <!-- Your main view, should have "view-main" class -->
+        <div class="view view-main">
+            <!-- Top Navbar-->
+            <div class="navbar">
+                <div class="navbar-inner">
+                    <!-- We need cool sliding animation on title element, so we have additional "sliding" class -->
+                    <div id="title" class="center sliding" align="center">Decision Tree</div>
+                    <div class="right">
+                        <!--
+                          Right link contains only icon - additional "icon-only" class
+                          Additional "open-panel" class tells app to open panel when we click on this link
+                        -->
+                        <a href="#" class="link icon-only open-panel"><i class="icon icon-bars"></i></a>
+                    </div>
+                </div>
+            </div>
+            <!-- Pages container, because we use fixed-through navbar and toolbar, it has additional appropriate classes-->
+            <div class="pages navbar-through toolbar-through">
+                <!-- Page, "data-page" contains page name -->
+                <div data-page="index" class="page">
+                    <!-- Scrollable page content -->
+                    <div class="page-content">
+                        <div class="content-block">
+                        	
+                        	<p id="content"></p>
+                            <p id="question"></p>
+                            <!--makes an arbitrary number of buttons -->
+							<button id="b1" onclick="path(this.value)"></button>
+							<button id="b2" onclick="path(this.value)"></button>
+							<button id="b3" onclick="path(this.value)"></button>
+							<button id="b4" onclick="path(this.value)"></button>
+							<button id="b5" onclick="path(this.value)"></button>
+							<button id="b6" onclick="path(this.value)"></button>
+							<button id="b7" onclick="path(this.value)"></button>
+							<button id="b8" onclick="path(this.value)"></button>
+							<button id="b9" onclick="path(this.value)"></button>
+							<button id="b10" onclick="path(this.value)"></button>
+							<p></p>
+							<!-- creates the Start button -->
+							<button id="start" onclick="mySetup()">START</button>
+							<p></p>
+							<!-- creates the Reset button -->
+							<button id="redo" onclick="reset()">RESET</button>
+							<p></p>
+
+							<script type="text/javascript">
+
+							//The maximum number of answers (number of buttons we have)
+							var maxAns = 10;
+							
+							//The hard coded way that the information will be processed
+							var text = [
+							{titles:"Welcome", contents:"Let's decide what to wear today", questions:"Are you going to go to work?", answers:["yes", "no", "check weather", "choose clothing style", "open tree", "open link"], done:false, next:[2, 3, 8, 7, 7, 8]}, 
+							{titles:"Wear Work Clothes", contents: "Wear your normal business casual.", done:true},
+							{titles:"Check the Weather", contents: "So you're going to play...", questions:"What is the weather like?", answers:["hot", "cold", "rainy"], done:false, next:[4, 5, 6]},
+							{titles:"Wear Hot Weather Clothes", contents:"Wear shorts and T-Shirt", done:true},
+							{titles:"Wear Cold Weather Clothes", contents:"Wear a sweater and long pants.", done:true},
+							{titles:"Wear Rainy Day Clothes", contents:"Wear a rain jacket or bring an umbrella.", done:true},
+							{titles:"Open Clothing Tree", contents:"TREE: 558530983,2", done:true},
+							{titles:"Go to Weather.com", contents:"LINK: http://weather.com", done:true}
+							]
+							
+							//The way we will grab information from google sheets
+							//var text = stringParse();
+
+
+							//Sets up the first set of questions
+							function mySetup(){
+
+
+								//erases Start button
+								document.getElementById("start").style.display = "none";
+								
+								//sets up correct title, questions, and content					
+								document.getElementById("title").innerHTML = text[0].titles;
+								document.getElementById("content").innerHTML = text[0].contents;
+								document.getElementById("question").innerHTML = text[0].questions;
+
+								//sets up original buttons
+								for(i = 0; i < text[0].answers.length; i++){
+									document.getElementById("b"+(i+1)).style.display = "";
+									document.getElementById("b"+(i+1)).innerHTML = text[0].answers[i];
+									document.getElementById("b"+(i+1)).value = text[0].next[i];
+								}
+								
+								//erases unused buttons
+								for(i = text[0].answers.length + 1; i <= maxAns; i++){
+									document.getElementById("b"+i).style.display = "none";
+								}
+							}
+
+							//moves the user along their chosen path in the decision tree
+							function path(val) {
+								//offsets the value by 1 because arrays start at 0
+								val = val - 1;								
+
+								//sets the title and content to their relevant text
+								document.getElementById("title").innerHTML = text[val].titles;
+								document.getElementById("content").innerHTML = text[val].contents;
+
+								//posts a question if one is there
+								if(!text[val].done){
+									
+									//posts the question itself
+									document.getElementById("question").innerHTML = text[val].questions;
+
+									//displays the correct number of answers, with relevant text and values
+									for(i = 0; i < text[val].answers.length; i++){
+										document.getElementById("b"+(i+1)).style.display = "";
+										document.getElementById("b"+(i+1)).innerHTML = text[val].answers[i];
+										document.getElementById("b"+(i+1)).value = text[val].next[i];										
+									}
+
+									//erases the unused buttons
+									for(i = text[val].answers.length + 1; i <= maxAns; i++){
+										document.getElementById("b"+i).style.display = "none";
+									}
+								}
+
+								//Eliminates the answer selections for the final text to show by itself
+								else{
+									for(i = 0; i < maxAns; i++){
+										document.getElementById("b"+(i+1)).style.display = "none";
+									}
+									document.getElementById("question").innerHTML = "";
+								}
+							}
+							
+							//starts the tree from the beginning (is its own function in case other things are to be added)
+							function reset(){
+								mySetup();
+							}
+
+							</script>
+
+
+							<!--copied from Sheets ********************************************* -->
+							<!--Many of these comments for the underwritten may be ill informed.  Much of this code is not mine and I take no credit for it-->
+							<script type="text/javascript">
+
+							//sends the request to google to give us the relevant data
+						    function makeApiCall() {
+						      var params = {
+						        // The ID of the spreadsheet to retrieve data from.
+						        spreadsheetId: '19mGKx7aMqjc_bSVCJ_04tnwTAguLLGK5kPrkF7wI4jE',  // TODO: Update placeholder value.
+
+						        // The A1 notation of the values to retrieve.
+						        range: 'B2:J9',  // TODO: Update placeholder value.
+
+						        // How values should be represented in the output.
+						        // The default render option is ValueRenderOption.FORMATTED_VALUE.
+						        valueRenderOption: 'FORMATTED_VALUE',  // TODO: Update placeholder value.
+
+						        // How dates, times, and durations should be represented in the output.
+						        // This is ignored if value_render_option is
+						        // FORMATTED_VALUE.
+						        // The default dateTime render option is [DateTimeRenderOption.SERIAL_NUMBER].
+						        dateTimeRenderOption: 'SERIAL_NUMBER',  // TODO: Update placeholder value.
+
+						        majorDimension: 'ROWS'
+						      };
+
+						      var request = gapi.client.sheets.spreadsheets.values.get(params);
+						      request.then(function(response) {
+						        // TODO: Change code below to process the `response` object:
+						        stringParse(response.result.values);
+						        console.log(response.result);
+						      }, function(reason) {
+						        console.error('error: ' + reason.result.error.message);
+						      });
+						    }
+
+						    //parses through the information brought in and makes it into a list of objects
+						    function stringParse(info){
+
+						    	//see sheets for a better version--still in progress
+						    	var returnVal;
+
+						      	return returnVal;
+						    }
+						    
+						    //initializes the client to access the actual sheet
+						    function initClient() {
+						      var API_KEY = 'AIzaSyD1548_G7dQRFH7us5ziBpOp-DRRQ3w1yk';  // TODO: Update placeholder with desired API key.
+
+						      var CLIENT_ID = '371986161218-v1ejafinod0idod1dl5jll2nrap36q5o.apps.googleusercontent.com';  // TODO: Update placeholder with desired client ID.
+
+						      // TODO: Authorize using one of the following scopes:
+						      //   'https://www.googleapis.com/auth/drive'
+						      //   'https://www.googleapis.com/auth/drive.file'
+						      //   'https://www.googleapis.com/auth/drive.readonly'
+						      //   'https://www.googleapis.com/auth/spreadsheets'
+						      //   'https://www.googleapis.com/auth/spreadsheets.readonly'
+						      var SCOPE = 'https://www.googleapis.com/auth/spreadsheets.readonly';
+
+						      gapi.client.init({
+						        'apiKey': API_KEY,
+						        'clientId': CLIENT_ID,
+						        'scope': SCOPE,
+						        'discoveryDocs': ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
+						      }).then(function() {
+						        gapi.auth2.getAuthInstance().isSignedIn.listen(updateSignInStatus);
+						        updateSignInStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
+						      });
+						    }
+
+						    //loads the client so that a user may log in
+						    function handleClientLoad() {
+						      gapi.load('client:auth2', initClient);
+						    }
+
+						    //grabs the data if the user is signed in
+						    function updateSignInStatus(isSignedIn) {
+						      if (isSignedIn) {
+						        makeApiCall();
+						      }
+						    }
+
+						    //signs in a user
+						    function handleSignInClick(event) {
+						      gapi.auth2.getAuthInstance().signIn();
+						    }
+
+						    //signs out a user
+						    function handleSignOutClick(event) {
+						      gapi.auth2.getAuthInstance().signOut();
+						    }
+						    </script>
+						    
+						    <script async defer src="https://apis.google.com/js/api.js"
+						      onload="this.onload=function(){};handleClientLoad()"
+						      onreadystatechange="if (this.readyState === 'complete') this.onload()">
+						    </script>
+							
+							
+                            <!-- Link to another page -->
+                            <a href="about.html">About app</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Bottom Toolbar-->
+            <div class="toolbar">
+                <div class="toolbar-inner">
+                    <!-- Toolbar links -->
+                    <a href="#" class="link">Link 1</a>
+                    <a href="#" class="link">Link 2</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript" src="cordova.js"></script>
+    <script type="text/javascript" src="lib/framework7/js/framework7.min.js"></script>
+    <script type="text/javascript" src="js/my-app.js"></script>
+</body>
+
+</html>
